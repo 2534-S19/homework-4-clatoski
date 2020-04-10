@@ -11,7 +11,7 @@ int main(void)
 
     // TODO: Declare the variables that main uses to interact with your state machine.
     bool stateChk = false;
-    static states stateFSM = STATE0;
+    states stateFSM = STATE0;
 
 
     // Stops the Watchdog timer.
@@ -28,7 +28,8 @@ int main(void)
        EUSCI_A_UART_LSB_FIRST,                       // LSB First
        EUSCI_A_UART_ONE_STOP_BIT,                    // One stop bit
        EUSCI_A_UART_MODE,                            // UART mode
-       EUSCI_A_UART_OVERSAMPLING_BAUDRATE_GENERATION // Oversampling
+       EUSCI_A_UART_OVERSAMPLING_BAUDRATE_GENERATION, // Oversampling
+       EUSCI_A_UART_8_BIT_LEN                        //8bit length
     };
 
     // TODO: Make sure Tx AND Rx pins of EUSCI_A0 work for UART and not as regular GPIO pins.
@@ -49,20 +50,27 @@ int main(void)
             rChar = UART_receiveData(EUSCI_A0_BASE);
             stateChk = charFSM(rChar, stateFSM);
 
-
-
-
-
         // TODO: If an actual character was received, echo the character to the terminal AND use it to update the FSM.
         //       Check the transmit interrupt flag prior to transmitting the character.
             if (stateChk && rChar != '4')
             {
-                if (UART_getInterruptStatus (EUSCI_A0_BASE, EUSCI_A_UART_TRANSMIT_INTERRUPT_FLAG)
-                                               == EUSCI_A_UART_TRANSMIT_INTERRUPT_FLAG)
-                                               UART_transmitData(EUSCI_A0_BASE, rChar);
-
+                if (rChar == '2')
+                {
+                    echoC = '2';
+                }
+                else if (rChar =='3')
+                {
+                    echoC = '3';
+                }
+                else if (rChar =='5')
+                {
+                    echoC = '5';
+                }
+                if (UART_getInterruptStatus (EUSCI_A0_BASE, EUSCI_A_UART_TRANSMIT_INTERRUPT_FLAG) == EUSCI_A_UART_TRANSMIT_INTERRUPT_FLAG)
+                {
+                    UART_transmitData(EUSCI_A0_BASE, echoC);
+                }
             }
-
         // TODO: If the FSM indicates a successful string entry, transmit the response string.
         //       Check the transmit interrupt flag prior to transmitting each character and moving on to the next one.
         //       Make sure to reset the success variable after transmission.

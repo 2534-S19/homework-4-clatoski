@@ -11,6 +11,7 @@ int main(void)
 
     // TODO: Declare the variables that main uses to interact with your state machine.
     bool stateChk = false;
+    bool printR = false;
     states stateFSM = STATE0;
 
 
@@ -48,46 +49,53 @@ int main(void)
         if (UART_getInterruptStatus (EUSCI_A0_BASE, EUSCI_A_UART_RECEIVE_INTERRUPT_FLAG) == EUSCI_A_UART_RECEIVE_INTERRUPT_FLAG)
         {
             rChar = UART_receiveData(EUSCI_A0_BASE);
-            stateChk = charFSM(rChar, stateFSM);
-
         // TODO: If an actual character was received, echo the character to the terminal AND use it to update the FSM.
         //       Check the transmit interrupt flag prior to transmitting the character.
-            if (stateChk && rChar != '4')
+            stateChk = charFSM(rChar, stateFSM);
+
+            if (rChar == '2')
             {
-                if (rChar == '2')
+                stateFSM = STATE1;
+                echoC = '2';
+            }
+            else if (rChar =='3')
+            {
+                stateFSM = STATE3;
+                echoC = '3';
+            }
+            else if (rChar =='5')
+            {
+                stateFSM = STATE2;
+                echoC = '5';
+            }
+            else if (rChar =='4')
+            {
+                stateFSM = STATE4;
+                echoC = '4';
+                if (stateChk)
                 {
-                    echoC = '2';
-                }
-                else if (rChar =='3')
-                {
-                    echoC = '3';
-                }
-                else if (rChar =='5')
-                {
-                    echoC = '5';
-                }
-                if (UART_getInterruptStatus (EUSCI_A0_BASE, EUSCI_A_UART_TRANSMIT_INTERRUPT_FLAG) == EUSCI_A_UART_TRANSMIT_INTERRUPT_FLAG)
-                {
-                    UART_transmitData(EUSCI_A0_BASE, echoC);
+                    printR = true;
                 }
             }
+
+
         // TODO: If the FSM indicates a successful string entry, transmit the response string.
         //       Check the transmit interrupt flag prior to transmitting each character and moving on to the next one.
         //       Make sure to reset the success variable after transmission.
-            else if(stateChk && rChar == '4')
+            if (UART_getInterruptStatus (EUSCI_A0_BASE, EUSCI_A_UART_TRANSMIT_INTERRUPT_FLAG) == EUSCI_A_UART_TRANSMIT_INTERRUPT_FLAG)
             {
-                if (UART_getInterruptStatus (EUSCI_A0_BASE, EUSCI_A_UART_TRANSMIT_INTERRUPT_FLAG) == EUSCI_A_UART_TRANSMIT_INTERRUPT_FLAG)
+                UART_transmitData(EUSCI_A0_BASE, echoC);
+                if (printR)
                 {
                     int i;
                     for (i = 0;i<49;i++)
                     {
-                        echoC = response[i];
+                        echoC = *response;
                         UART_transmitData(EUSCI_A0_BASE, echoC);
+                        response++;
                     }
                 }
-
             }
-
         }
     }
 }
@@ -100,63 +108,65 @@ void initBoard()
 // TODO: FSM for detecting character sequence.
 bool charFSM(char rChar, states currentState)
 {
-    bool finished = false;
+    bool two;
+    bool three;
+    bool five;
     switch (currentState)
     {
     case STATE0:
         if (rChar == '2')
         {
             currentState = STATE1;
-            finished = true;
+            two = true;
         }
         else
         {
             currentState = STATE0;
-            finished = false;
+            two = false;
         }
     break;
     case STATE1:
-        if (rChar =='2')
-        {
-            currentState = STATE1;
-            finished = true;
-        }
-        else if(rChar =='5')
+        if(rChar =='5' && two)
         {
             currentState =STATE2;
-            finished = true;
+            five = true;
         }
         else
         {
             currentState = STATE0;
+            five = false;
         }
     break;
     case STATE2:
-        if (rChar =='3')
+        if (rChar =='3' && two && five)
         {
             currentState = STATE3;
-            finished = true;
+            three = true;
         }
         else
         {
             currentState = STATE0;
+            three = false;
         }
     break;
     case STATE3:
-        if (rChar =='4')
+        if (rChar =='4' && two && five && three)
         {
-            currentState = STATE4;
-            finished = true;
+            currentState = STATE0;
+
         }
         else
         {
             currentState = STATE0;
+
         }
     break;
-    case STATE4:
-            currentState = STATE0;
-            finished = true;
-    break;
     }
-    return finished;
+    bool complete = false;
+    if (two && five && three)
+    {
+        complete = true;
+    }
+
+    return complete;
 }

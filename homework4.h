@@ -10,7 +10,8 @@
 
 // This function initializes the board by turning off the Watchdog Timer.
 void initBoard();
-bool charFSM(char rChar);
+typedef enum {STATE0,STATE1, STATE2, STATE3, STATE4} states;
+bool charFSM(char rChar, states currentState);
 
 // TODO: Define any constants that are local to homework.c using #define
 
